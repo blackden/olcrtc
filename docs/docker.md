@@ -10,7 +10,7 @@
 
 # Локальная настройка Docker
 
-> **Важно:** Обязательно проверяйте, есть ли сервис видеозвонков у вас в белых списках. Если его там нет - используйте другой. Список всех сервисов в белых списках скоро будет опубликован.
+> **Важно:** Обязательно проверяйте, есть ли сервис видеозвонков у вас в белых списках. Если его там нет — используйте другой. Список всех сервисов в белых списках скоро будет опубликован.
 
 > **Jitsi-провайдер:** если используете `jitsi`, выбирайте сервер в зависимости от того, что доступно в вашей сети:
 > - `https://meet1.arbitr.ru/`
@@ -19,124 +19,113 @@
 > Откройте оба в браузере и используйте тот, который работает.
 
 
-Здесь описан один из способов запуска сервера olcrtc с локальной конфигурацией Docker.
+Запуск olcrtc через единый `compose.yaml` с профилями `server` / `client` / `gen`.
 
 ## Идея
 
-- держать изменяемые Docker-файлы в скрытой папке `.local`
-- хранить конфигурационные файлы вне Git, в папке `.local`
-- позволять пользователям обновлять репозиторий обычным `git pull`
+- один `compose.yaml` в корне репо с тремя профилями (вместо двух раздельных файлов)
+- секрет `crypto.key` через compose `secrets:`, а не env var
+- остальные настройки — через `.env` (gitignored), шаблон в `.env.example`
+- hardening-флаги (read-only fs, cap_drop ALL, no-new-privileges, лимиты, ротация логов) применяются ко всем сервисам
 
 ---
 
 ## Шаг 1: Клонирование репозитория
 
 ```bash
-git clone https://github.com/openlibrecommunity/olcrtc.git
+git clone --recursive https://github.com/blackden/olcrtc.git
 cd olcrtc
 ```
 
 ---
 
-## Шаг 2: Обновление до последней версии
+## Шаг 2: Подготовить ключ шифрования
 
-Чтобы получить новую версию из upstream:
+64 hex-символа, идентичный на server и client. Сгенерировать на сервере:
 
 ```bash
-git pull https://github.com/openlibrecommunity/olcrtc.git --recurse-submodules
+mkdir -p secrets
+openssl rand -hex 32 > secrets/olcrtc.key
+chmod 600 secrets/olcrtc.key
+```
+
+Этот же файл нужно скопировать на client (через защищённый канал).
+
+---
+
+## Шаг 3: Подготовить `.env`
+
+```bash
+cp .env.example .env
+$EDITOR .env
+```
+
+Минимум, что нужно задать: `OLCRTC_CARRIER`, `OLCRTC_TRANSPORT`, `OLCRTC_ROOM_ID`.
+
+Подробно про переменные — комментарии в `.env.example` и [`settings.md`](settings.md).
+
+---
+
+## Шаг 4: Запуск
+
+### Сервер (egress на хосте за пределами whitelist)
+
+```bash
+docker compose --profile server up -d
+docker compose --profile server logs -f srv
+```
+
+### Клиент (локальный SOCKS5 на 127.0.0.1:8808)
+
+```bash
+docker compose --profile client up -d
+docker compose --profile client logs -f cnc
+```
+
+### Генератор room-id (для провайдеров, требующих pre-allocated)
+
+```bash
+docker compose --profile gen run --rm gen
 ```
 
 ---
 
-## Шаг 3: Папка для локальных конфигураций
-
-Создайте директорию `.local` в корне репозитория:
+## Шаг 5: Проверка состояния
 
 ```bash
-mkdir -p .local
+docker compose ps                       # все запущенные сервисы
+docker compose --profile client ps      # только client-профиль
 ```
 
-Эта папка должна содержать файлы, которые будут использоваться только на вашем сервере.
+Healthcheck для `cnc` проверяет, что локальный SOCKS5-listener принимает соединения. Для `srv` healthcheck — это liveness-проверка процесса (отдельная задача — добавить функциональный health).
 
 ---
 
-## Шаг 4: Скопируйте docker-compose.yml в `.local`
+## Шаг 6: Обновление образа
 
-Скопируйте файл `docker-compose.server.yml`, чтобы ваша локальная версия не перезаписывалась при следующем обновлении репозитория через `git pull`:
+Если используете опубликованный `ghcr.io/blackden/olcrtc:latest` (по умолчанию):
 
 ```bash
-cp docker-compose.server.yml .local/docker-compose.server.yml
+docker compose pull
+docker compose --profile server up -d   # или --profile client
 ```
 
-Если файл `docker-compose.server.yml` позже изменится, скопируйте его снова этой же командой после `git pull`.
-
----
-
-## Шаг 5: Создайте локальный файл окружения
-
-Создайте `.local/.env` и заполните значения в соответствии с выбранным типом подключения.
-
-Пример можно найти в `docs/examples/.env.telemost.server.example`.
-
----
-
-## Шаг 6: Запуск OLCRTC
-
-Запуск контейнеризированного сервера используя `docker-compose.server.yml` и локальный `.env`:
+Если собираете локально (`build:` блок в `compose.yaml`):
 
 ```bash
-docker compose -f .local/docker-compose.server.yml --env-file .local/.env up -d
-```
-
-Проверка состояния контейнера:
-
-```bash
-docker compose -f .local/docker-compose.server.yml --env-file .local/.env ps
-```
-
-Просмотр логов контейнера:
-
-```bash
-docker compose -f .local/docker-compose.server.yml --env-file .local/.env logs -f
-docker logs olcrtc-server
-```
-
----
-
-## Шаг 7: Обновление контейнера
-
-Получите новую версию репозитория:
-
-```bash
-git pull https://github.com/openlibrecommunity/olcrtc.git
-```
-
-После каждого обновления сравните новый и старый файл:
-
-```bash
-diff -wy .local/docker-compose.server.yml docker-compose.server.yml
-```
-
-Если есть отличия, скопируйте файл из корня в папку `.local`:
-
-```bash
-cp docker-compose.server.yml .local/docker-compose.server.yml
-```
-
-Затем перезапустите контейнер:
-
-```bash
-docker compose -f .local/docker-compose.server.yml down
-docker compose -f .local/docker-compose.server.yml --env-file .local/.env up -d
+git pull
+docker compose --profile server build
+docker compose --profile server up -d
 ```
 
 ---
 
 ## Примечания
 
-- Храните все локальные Docker-файлы внутри отдельной папки `.local`.
-- Не добавляйте `.local` в репозиторий (она должна быть в `.gitignore`).
-- Держите общую документацию в `docs/`, а специфичные настройки в `.local`.
+- `.env` — в `.gitignore`; в репо хранится только `.env.example`
+- `secrets/olcrtc.key` — в `.gitignore`; должен быть `chmod 600`
+- Volumes `olcrtc-srv-state` и `olcrtc-cnc-state` сохраняют состояние между перезапусками — в них entrypoint при первом запуске `srv` может сохранить сгенерированный ключ, если `secrets/olcrtc.key` пуст или отсутствует
+- Все сервисы запускаются с `read_only: true`; `/tmp` доступен через `tmpfs`, конфиг и состояние — через volume
 
 ---
 
