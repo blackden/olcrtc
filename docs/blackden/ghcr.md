@@ -27,20 +27,29 @@ Multi-arch образы olcrtc публикуются в `ghcr.io/blackden/olcrt
 
 Plus SLSA provenance attestation и SBOM (включены в workflow).
 
-## Одноразовый шаг: сделать package публичным
+## Visibility — пакет остаётся приватным
 
-После **первого** push образ создаётся **приватным** — GitHub так делает по умолчанию для GHCR. **REST API для смены visibility нет** (проверено через docs.github.com/en/rest/packages — endpoint'а попросту не существует). Только через Web UI:
+Решение по этому форку: **package на GHCR остаётся private**. Причина — операция «private → public» через GHCR Web UI **необратима** (вернуть в private нельзя, можно только удалить пакет и пересоздать с нуля), а REST API для этого нет.
 
-1. Открыть https://github.com/blackden?tab=packages (или https://github.com/blackden/packages)
-2. Кликнуть на пакет `olcrtc`
-3. На странице пакета — иконка шестерёнки **«Package settings»** справа внизу
-4. Прокрутить до **«Danger Zone»** в самом низу
-5. **«Change visibility»** → **«Public»**
-6. Подтвердить вводом имени пакета (`olcrtc`) и нажатием «I understand the consequences, change package visibility»
+Это значит, что для `docker pull ghcr.io/blackden/olcrtc:<tag>` нужен логин:
 
-> ⚠️ **Это нельзя откатить.** Раз сделанный package public нельзя сделать обратно private — будет только удалить и пересоздать заново.
+```bash
+# PAT с scope read:packages — создать на https://github.com/settings/personal-access-tokens
+echo "$GITHUB_PAT_READ_PACKAGES" | docker login ghcr.io -u blackden --password-stdin
 
-После этого `docker pull ghcr.io/blackden/olcrtc:latest` работает без `docker login`.
+docker pull ghcr.io/blackden/olcrtc:latest
+```
+
+Для MikroTik CHR — см. [`mikrotik-chr.md`](mikrotik-chr.md) (там в `/container/config/set` задаётся `username`/`password`).
+
+### Если когда-нибудь понадобится публичный доступ
+
+Не флипать GHCR (необратимо). Вместо этого — зеркалить образ в Docker Hub отдельным workflow:
+
+- `ghcr.io/blackden/olcrtc:<tag>` (приватный, источник истины)
+- `docker.io/blackden/olcrtc:<tag>` (публичная копия)
+
+Эта работа — отдельный issue (открыт как опциональный follow-up).
 
 ## Использование
 
@@ -68,7 +77,7 @@ OLCRTC_IMAGE=ghcr.io/blackden/olcrtc:sha-<commit> docker compose --profile clien
 
 | Симптом | Причина | Что делать |
 |---------|---------|------------|
-| `denied: requested access to the resource is denied` | Package private | См. "сделать публичным" выше |
+| `denied: requested access to the resource is denied` | Не залогинены в GHCR | `docker login ghcr.io -u blackden -p <PAT>` |
 | `manifest unknown` | Образ ещё не собрался | Проверить статус workflow: `gh run list -R blackden/olcrtc -w docker` |
 | `no matching manifest for linux/arm64/v8` | Образ собрался только под amd64 | Запустить workflow заново (могла упасть arm64-сборка) |
 

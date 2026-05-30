@@ -101,22 +101,37 @@ Healthcheck для `cnc` проверяет, что локальный SOCKS5-li
 
 ---
 
-## Шаг 6: Обновление образа
+## Шаг 6: Pull опубликованного образа (опционально)
 
-Если используете опубликованный `ghcr.io/blackden/olcrtc:latest` (по умолчанию):
+Образ автоматически собирается и пушится на GHCR по адресу `ghcr.io/blackden/olcrtc:latest`, но **package приватный** — нужен `docker login` с PAT (scope `read:packages`):
 
 ```bash
+echo "$GITHUB_PAT_READ_PACKAGES" | docker login ghcr.io -u <github-user> --password-stdin
 docker compose pull
-docker compose --profile server up -d   # или --profile client
+docker compose --profile server up -d
 ```
 
-Если собираете локально (`build:` блок в `compose.yaml`):
+Альтернатива — собирать локально из исходников (build-блок уже прописан в `compose.yaml`):
 
 ```bash
 git pull
 docker compose --profile server build
 docker compose --profile server up -d
 ```
+
+Подробнее про GHCR — [`blackden/ghcr.md`](blackden/ghcr.md).
+
+## Шаг 7: Обновление
+
+Свежий код → новый билд:
+
+```bash
+git pull --recurse-submodules
+docker compose --profile server build --pull
+docker compose --profile server up -d
+```
+
+Или (если используете GHCR-pull) — просто `docker compose pull && docker compose up -d` после того, как CI прокатил новый коммит и спушил образ.
 
 ---
 

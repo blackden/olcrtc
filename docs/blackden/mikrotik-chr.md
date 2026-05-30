@@ -45,13 +45,13 @@
     ram-high=256M
 ```
 
-Если ваш image приватный — добавить:
+**Image приватный — это обязательно** (см. [`ghcr.md`](ghcr.md)):
 
 ```routeros
 /container/config/set username=<github-user> password=<PAT-with-read:packages>
 ```
 
-Для нашего публичного `ghcr.io/blackden/olcrtc` это не нужно (после флипа visibility в public; см. [`ghcr.md`](ghcr.md)).
+PAT с scope `read:packages` создаётся на https://github.com/settings/personal-access-tokens. Хранится в открытом виде в `/container/config` — учитывайте при оценке threat model на CHR.
 
 ---
 
@@ -168,7 +168,7 @@ ps
 | `not enough space` | Мало места на `disk1` | Проверить `/file/print`; убрать `tmpdir`/`root-dir` на бо́льший раздел |
 | `container exited immediately` | Неверные env (carrier/transport не настроены, или KEY не 64 hex) | `log/print` — entrypoint пишет конкретную ошибку валидации |
 | `manifest unknown` для arm64 | Workflow не собрал arm64 | Проверить `gh run list -R blackden/olcrtc -w docker` |
-| `denied: requested access to the resource is denied` | Образ ещё private | Флипнуть на public, [`ghcr.md`](ghcr.md) |
+| `denied: requested access to the resource is denied` | `username`/`password` не настроены в `/container/config` | См. шаг 2 — обязательны для нашего private-образа |
 | Не подключается клиент через SOCKS | SOCKS_HOST=127.0.0.1 | См. шаг 4 — должно быть `0.0.0.0` |
 
 ---
