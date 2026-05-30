@@ -11,6 +11,9 @@
 #   DEV_GO_IMAGE      — override image (default: pinned golang-alpine)
 #   DEV_CACHE_PREFIX  — volume name prefix (default: olcrtc-dev)
 #   DEV_NETWORK       — docker --network value (default: host)
+#
+# Note: CGO is forced off (CGO_ENABLED=0) to match the Dockerfile build
+# profile. Override only if you have a specific cgo need.
 
 set -eu
 
