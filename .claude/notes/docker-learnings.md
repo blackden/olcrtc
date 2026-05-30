@@ -41,10 +41,15 @@ docker run --rm <new-base-digest-ref> sh -c \
 
 ## Build network
 
-Build container использует `--network=host` (commit 587c13e умышленно). Применять в:
-- локально: `docker build --network=host …`
-- compose: `build: { network: host }`
-- CI: `docker/build-push-action` → `network: host`
+Commit 587c13e добавил `--network host` для **podman-build контейнера в `script/cnc.sh`** (не для общего docker-build). Нужно было чтобы build-контейнер достучался до `host.containers.internal`.
+
+CLAUDE.md формулировал шире чем надо: «The Docker build uses host network mode». Реальный констрейнт — точечный, только `script/cnc.sh`.
+
+Тем не менее, для наших сборок `--network=host` — безопасный дефолт (build может тянуть deps через host-locally прокси, не теряем ничего по сравнению с дефолтным bridge). Применяем в:
+- compose `build: { network: host }`
+- CI `docker/build-push-action` → `network: host`
+- `mage docker` с `DOCKER_PLATFORMS` — `--network=host`
+- локально (`docker build`) — опционально; без флага тоже работает
 
 ## Healthcheck — функциональный, не liveness
 
