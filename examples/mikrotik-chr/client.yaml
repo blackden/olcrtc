@@ -1,0 +1,24 @@
+# Minimal olcrtc cnc config for MikroTik CHR deployment.
+#
+# RouterOS container has no compose secrets — encryption key lives in env
+# (or in a file mounted into /var/lib/olcrtc/key.hex via /container/mounts).
+# The entrypoint generates the config from env vars; this file is here as a
+# reference for what gets produced and what you can override directly by
+# mounting it to /tmp/olcrtc-cnc.yaml.
+#
+# In normal operation you DO NOT need this file — env vars are enough.
+
+mode: cnc
+auth:
+  provider: "jitsi"   # OR telemost, wbstream, none
+room:
+  id: "<room-id-from-server>"
+crypto:
+  key: "<64-hex-from-server>"
+net:
+  transport: "datachannel"   # OR vp8channel, seichannel, videochannel
+  dns: "8.8.8.8:53"
+data: "/usr/share/olcrtc"
+socks:
+  host: "0.0.0.0"   # CRITICAL on CHR: 127.0.0.1 would only listen inside container
+  port: 8808
