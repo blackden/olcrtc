@@ -34,12 +34,14 @@
 
 ## Под капотом: docker-фолбэк
 
-`script/dev/in-docker.sh` — тонкая обёртка над `docker run`:
+`script/dev/in-docker.sh` — обёртка над `docker run`:
 
-- Образ: `golang:1.26-alpine3.22` (тот же digest, что в production-`Dockerfile`)
+- Base-образ: `golang:1.26-alpine3.22` (тот же digest, что в production-`Dockerfile`)
+- При первом вызове собирает derived-image `olcrtc-dev-go:cached` (добавляет `gcc`, `musl-dev`, `git`, `ca-certificates` — нужно для `go test -race` и cgo вообще). Сборка ~5s, кэшируется локально.
 - Persistent volumes для `/go/pkg/mod` и `/root/.cache/go-build` (имена `olcrtc-dev-gomod`, `olcrtc-dev-gocache`)
-- `--network=host` (нужно для go-mod-download через корпоративные прокси)
-- `CGO_ENABLED=0`
+- `--network=host` (нужно для `go mod download` через корпоративные прокси)
+- CGO не форсится — Go сам решает (cgo on, потому что toolchain установлен). Для static-сборок (как в production) `Makefile` `build`-таргет явно проставляет `CGO_ENABLED=0`.
+- Пересобрать derived-image: `DEV_REBUILD=1 ./script/dev/in-docker.sh go version`
 
 Прямой вызов:
 
@@ -48,10 +50,10 @@
 ./script/dev/in-docker.sh sh -c 'go env && ls /go/pkg/mod | head'
 ```
 
-Образ можно переопределить:
+Base-образ можно переопределить:
 
 ```sh
-DEV_GO_IMAGE=golang:1.27-alpine ./script/dev/in-docker.sh go version
+DEV_BASE_IMAGE=golang:1.27-alpine ./script/dev/in-docker.sh go version
 ```
 
 ## Типичные рецепты
