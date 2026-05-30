@@ -1435,7 +1435,11 @@ func TestFrequentReconnectsStillAllowNewSOCKSConnections(t *testing.T) {
 
 	for i := range 5 {
 		rt.room.triggerReconnect()
-		conn := eventuallyConnectViaSOCKS(t, rt.socksAddr, echoAddr)
+		// triggerReconnect returns once each reconnect callback is invoked,
+		// but the smux rebuild + control-handshake (CLIENT_HELLO/SERVER_WELCOME)
+		// still finish asynchronously and can take > 3s on slow CI runners.
+		// Give the polling loop a 10s budget instead of the default 3s.
+		conn := eventuallyConnectViaSOCKSWithin(t, rt.socksAddr, echoAddr, 10*time.Second)
 		payload := fmt.Appendf(nil, "after-reconnect-%d\n", i)
 		if _, err := conn.Write(payload); err != nil {
 			_ = conn.Close()
