@@ -72,9 +72,31 @@ func Podman() error {
 }
 
 // Docker builds the image using docker.
+//
+// Set DOCKER_PLATFORMS (comma-separated, e.g. "linux/amd64,linux/arm64") to
+// build multi-arch via buildx. With DOCKER_PUSH=1 the image is also pushed —
+// requires prior `docker login` to the destination registry encoded in DOCKER_TAG.
+// Default DOCKER_TAG=olcrtc:latest; for GHCR use DOCKER_TAG=ghcr.io/blackden/olcrtc:<tag>.
 func Docker() error {
 	tag := envOr("DOCKER_TAG", "olcrtc:latest")
-	return sh.RunV("docker", "build", "-t", tag, ".")
+	platforms := envOr("DOCKER_PLATFORMS", "")
+	push := envOr("DOCKER_PUSH", "") == "1"
+
+	if platforms == "" && !push {
+		return sh.RunV("docker", "build", "-t", tag, ".")
+	}
+
+	args := []string{"buildx", "build", "-t", tag, "--network=host"}
+	if platforms != "" {
+		args = append(args, "--platform", platforms)
+	}
+	if push {
+		args = append(args, "--push")
+	} else {
+		args = append(args, "--load")
+	}
+	args = append(args, ".")
+	return sh.RunV("docker", args...)
 }
 
 // Lint runs golangci-lint.

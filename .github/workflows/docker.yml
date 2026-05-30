@@ -1,0 +1,75 @@
+# Build multi-arch (linux/amd64,linux/arm64) image and push to GHCR.
+# Triggers: push to blackden/master, semver tags (v*), or manual dispatch.
+#
+# Action versions verified via context7 (docker org). Refresh procedure:
+#   mcp__plugin_context7_context7__query-docs /docker/build-push-action
+name: docker
+
+on:
+  push:
+    branches:
+      - blackden/master
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/blackden/olcrtc
+          tags: |
+            type=ref,event=branch
+            type=sha,format=long
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+          labels: |
+            org.opencontainers.image.source=https://github.com/blackden/olcrtc
+            org.opencontainers.image.licenses=WTFPL
+            org.opencontainers.image.description=Encrypted TCP-over-WebRTC tunnel masquerading as a video call
+
+      - name: Build and push
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64,linux/arm64
+          network: host
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
+          sbom: true
