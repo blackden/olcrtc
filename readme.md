@@ -39,6 +39,8 @@ Community ui client: [alananisimov/olcbox](https://github.com/alananisimov/olcbo
 
 [Docker setup](docs/docker.md)
 
+[Development (blackden toolbelt)](docs/blackden/dev.md)
+
 [Client URI format](docs/uri.md)
 
 [Client subscription format](docs/sub.md)
