@@ -16,7 +16,7 @@ GO      := $(if $(HAVE_GO),go,./script/dev/in-docker.sh go)
 
 # Detect local golangci-lint; otherwise use docker.
 HAVE_GCL := $(shell command -v golangci-lint 2>/dev/null)
-GCL_IMAGE := golangci/golangci-lint:v2.6-alpine
+GCL_IMAGE := golangci/golangci-lint:v2.12-alpine
 GCL := $(if $(HAVE_GCL),golangci-lint,docker run --rm --network=host \
         -v $(CURDIR):/src -w /src \
         -v olcrtc-dev-gomod:/go/pkg/mod \
