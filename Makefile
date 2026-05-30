@@ -23,8 +23,9 @@ GCL := $(if $(HAVE_GCL),golangci-lint,docker run --rm --network=host \
         -v olcrtc-dev-gocache:/root/.cache/go-build \
         $(GCL_IMAGE) golangci-lint)
 
-COMPOSE := docker compose
-PROFILE ?= server
+COMPOSE  := docker compose
+PROFILE  ?= server
+PROFILES := server client gen
 
 .PHONY: help
 help:  ## show this help
@@ -70,7 +71,7 @@ up:  ## docker compose up -d for PROFILE (server|client|gen)
 
 .PHONY: down
 down:  ## docker compose down (all profiles)
-	$(COMPOSE) --profile server --profile client --profile gen down
+	$(COMPOSE) $(foreach p,$(PROFILES),--profile $(p)) down
 
 .PHONY: logs
 logs:  ## tail compose logs for PROFILE
@@ -82,7 +83,7 @@ ps:  ## list running compose services
 
 .PHONY: compose-check
 compose-check:  ## validate compose.yaml for all profiles
-	@for p in server client gen; do \
+	@for p in $(PROFILES); do \
 	    echo "=== profile: $$p ==="; \
 	    $(COMPOSE) --profile $$p config -q || exit 1; \
 	done
