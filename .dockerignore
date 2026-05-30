@@ -1,19 +1,39 @@
+# VCS / build / IDE
 .git
 .gitignore
+.github
+.claude
+.remember
+build/
+dist/
+olcrtc
 
+# Project meta — not needed in the image
 Dockerfile
 docker-compose*.yml
+compose.yaml
+.env
+.env.*
+secrets/
+magefile.go
+.golangci.yml
+*.md
+docs/
 
+# Legacy / scratch dirs
 code/
 doc/
 asset/
+research
 
+# Heavy test data
+internal/e2e/testdata/
+
+# Logs / temp
 *.log
 *.tmp
 tmp/
-
-olcrtc
-build/
-dist/
 coverage.out
+
+# AI-tool files
 GEMINI.md
