@@ -1,0 +1,78 @@
+name: olcrtc
+
+x-hardening: &hardening
+  init: true
+  restart: unless-stopped
+  read_only: true
+  tmpfs:
+    - /tmp:size=16m
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  pids_limit: 256
+  mem_limit: 256m
+  cpus: "1.0"
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+x-build: &build
+  context: .
+  dockerfile: Dockerfile
+  network: host
+
+services:
+  srv:
+    profiles: [server]
+    image: ${OLCRTC_IMAGE:-ghcr.io/blackden/olcrtc:latest}
+    build: *build
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      OLCRTC_MODE: srv
+      OLCRTC_KEY_FILE: /run/secrets/olcrtc_key
+    secrets:
+      - olcrtc_key
+    volumes:
+      - olcrtc-srv-state:/var/lib/olcrtc
+    <<: *hardening
+
+  cnc:
+    profiles: [client]
+    image: ${OLCRTC_IMAGE:-ghcr.io/blackden/olcrtc:latest}
+    build: *build
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      OLCRTC_MODE: cnc
+      OLCRTC_KEY_FILE: /run/secrets/olcrtc_key
+    secrets:
+      - olcrtc_key
+    network_mode: host
+    volumes:
+      - olcrtc-cnc-state:/var/lib/olcrtc
+    <<: *hardening
+
+  gen:
+    profiles: [gen]
+    image: ${OLCRTC_IMAGE:-ghcr.io/blackden/olcrtc:latest}
+    build: *build
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      OLCRTC_MODE: gen
+    <<: *hardening
+
+secrets:
+  olcrtc_key:
+    file: ./secrets/olcrtc.key
+
+volumes:
+  olcrtc-srv-state:
+  olcrtc-cnc-state:

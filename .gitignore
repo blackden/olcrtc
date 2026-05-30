@@ -255,3 +255,7 @@ cpu.prof
 .kirograph
 package.json
 package-lock.json
+
+# compose secrets (file-mounted via secrets:)
+secrets/*
+!secrets/.gitkeep
