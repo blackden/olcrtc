@@ -10,9 +10,9 @@
 - Включённый `container` package (см. шаг 1)
 - ≥ 256 MB свободной RAM (по реальному наблюдению; больше — лучше)
 - Внешний диск/раздел (`disk1/`) для root-dir контейнера и mount'ов. Встроенный flash MikroTik отговаривает.
-- На CHR-сценарии — `x86_64` образ (наш multi-arch покрывает); на ARM-RouterBoard — `arm64`/`arm` соответственно
+- **Архитектура:** сейчас в GHCR публикуется только `linux/amd64`. CHR (Cloud Hosted Router) — это amd64, всё работает. ARM-RouterBoard'ы временно не поддерживаются — в `.github/workflows/docker.yml` arm64-сборка парковано (легко вернуть, см. [`ghcr.md`](ghcr.md#платформы)).
 
-Архитектуры, поддерживаемые `container`: arm, arm64, x86. Слабые SoC (EN7562CT, hEX Refresh) — только arm32v5, наш образ туда не пойдёт.
+Архитектуры, в принципе поддерживаемые RouterOS `container`: arm, arm64, x86. Слабые SoC (EN7562CT, hEX Refresh) — только arm32v5, который мы вообще не собираем.
 
 ---
 
@@ -167,7 +167,7 @@ ps
 | `failed to pull` | Нет резолва `ghcr.io` | Проверить `/ip/dns` — DNS-сервер должен быть рабочий и достижимый |
 | `not enough space` | Мало места на `disk1` | Проверить `/file/print`; убрать `tmpdir`/`root-dir` на бо́льший раздел |
 | `container exited immediately` | Неверные env (carrier/transport не настроены, или KEY не 64 hex) | `log/print` — entrypoint пишет конкретную ошибку валидации |
-| `manifest unknown` для arm64 | Workflow не собрал arm64 | Проверить `gh run list -R blackden/olcrtc -w docker` |
+| `manifest unknown` для arm64 | arm64-сборка парковано в workflow | См. [`ghcr.md` → Платформы](ghcr.md#платформы) — раскомментировать строки в workflow |
 | `denied: requested access to the resource is denied` | `username`/`password` не настроены в `/container/config` | См. шаг 2 — обязательны для нашего private-образа |
 | Не подключается клиент через SOCKS | SOCKS_HOST=127.0.0.1 | См. шаг 4 — должно быть `0.0.0.0` |
 
