@@ -14,7 +14,9 @@ Multi-arch образы olcrtc публикуются в `ghcr.io/blackden/olcrt
 
 ## Платформы
 
-`linux/amd64` + `linux/arm64`. ARM64 собирается через QEMU emulation (медленнее нативного ~5–10×, но достаточно для нашего профиля).
+Сейчас собирается только **`linux/amd64`** — `arm64` парковано в workflow до появления конкретной необходимости (CHR — amd64, локальные хосты — amd64).
+
+Включить `linux/arm64` обратно — в `.github/workflows/docker.yml` раскомментировать строку `# platforms: linux/amd64,linux/arm64` и шаг `setup-qemu-action` выше. QEMU emulation медленнее нативного ~5–10×, но job всё равно укладывается в разумное время.
 
 ## OCI labels
 

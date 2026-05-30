@@ -120,9 +120,9 @@ services:
 
 ## Multi-arch build
 
-Локально — `mage docker` пока single-arch. CI workflow → `docker/build-push-action@v6` с `platforms: linux/amd64,linux/arm64`, QEMU emulation через `setup-qemu-action@v3`.
+Локально — `mage docker` пока single-arch. CI workflow `docker.yml` собирает только `linux/amd64` (arm64-сборка парковано в комментариях, легко вернуть).
 
-ARM64 build через QEMU медленный (~5–10 раз медленнее нативного). Если нужна нативная сборка — self-hosted ARM runner или GitHub-hosted `ubuntu-24.04-arm` (когда станут доступны для public репо).
+Когда вернём arm64: QEMU emulation через `setup-qemu-action@v4`, build медленнее нативного ~5–10×. Альтернатива — self-hosted ARM runner или GitHub-hosted `ubuntu-24.04-arm` (когда станут доступны для public репо).
 
 ## ffmpeg в образе
 
