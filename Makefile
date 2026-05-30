@@ -10,9 +10,12 @@
 SHELL := /bin/sh
 .DEFAULT_GOAL := help
 
-# Detect local Go.
+# Detect local Go. GO_RAW is the executable prefix (empty for local go,
+# wrapper path for docker fallback) — used when we need to set env vars
+# (e.g. CGO_ENABLED=0 for static builds) via the `env` command.
 HAVE_GO := $(shell command -v go 2>/dev/null)
 GO      := $(if $(HAVE_GO),go,./script/dev/in-docker.sh go)
+GO_RAW  := $(if $(HAVE_GO),,./script/dev/in-docker.sh)
 
 # Detect local golangci-lint; otherwise use docker.
 HAVE_GCL := $(shell command -v golangci-lint 2>/dev/null)
@@ -50,8 +53,8 @@ test-stress:  ## stress-run one test: make test-stress TEST=^TestX$$ N=50 [RACE=
 	    -timeout 600s -run '$(TEST)' ./internal/e2e
 
 .PHONY: build
-build:  ## build olcrtc binary into build/
-	$(GO) build -trimpath -ldflags="-s -w" -o build/olcrtc ./cmd/olcrtc
+build:  ## build static olcrtc binary into build/ (CGO_ENABLED=0, matches Dockerfile)
+	$(GO_RAW) env CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o build/olcrtc ./cmd/olcrtc
 
 .PHONY: lint
 lint:  ## run golangci-lint
