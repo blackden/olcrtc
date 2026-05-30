@@ -7,55 +7,87 @@
 
 </div>
 
-
 ## About
-olcRTC - across the sea
 
-Project that allows users to bypass blocking by parasitizing and tunneling on unblocked and whitelisted services in Russia, use legal webRTC services
+**olcRTC** — encrypted TCP-over-WebRTC tunnel. Парасайтит на легальных видеоконф-сервисах (Jitsi, Yandex Telemost, WB Stream) — туннелируемый трафик выглядит как обычный видеозвонок для whitelisted-хоста.
+
+Это **blackden** — форк с усиленным Docker-стеком, multi-arch GHCR-образами, гайдами под MikroTik CHR и dev-toolbelt'ом. Совместим с апстримом по протоколу.
 
 ## Status
 
-Beta
-<br>
-See all info in [issues](https://github.com/openlibrecommunity/olcrtc/issues)
-<br>
-Issues? contact us at [@openlibrecommunity](https://t.me/openlibrecommunity)
-<br>
-Or wait for the release or at least a release
-<br>
-Community ui client: [alananisimov/olcbox](https://github.com/alananisimov/olcbox)
+Beta. Issues / questions → [@openlibrecommunity](https://t.me/openlibrecommunity)
+Community UI client: [alananisimov/olcbox](https://github.com/alananisimov/olcbox)
 
-## Read docs for start 
+---
 
-[Configuration](docs/configuration.md)
+## Быстрый старт (blackden fork)
 
-[For noobs](docs/fast.md)
+### Просто запустить и протестировать
 
-[Manual](docs/manual.md)
+1. На VPS и ноуте — Docker и `git clone https://github.com/blackden/olcrtc.git`
+2. Подробный гайд end-to-end (srv на VPS + cnc на ноуте + curl-проверка): [`docs/blackden/manual-test.md`](docs/blackden/manual-test.md)
 
-[Setting matrix](docs/settings.md)
+### Разрабатывать на форке
 
-[More info](docs/about.md)
+`make help` показывает toolbelt. Локального Go не требует — все таргеты прозрачно фолбэчат на `golang:1.26-alpine` в Docker'е. Подробно: [`docs/blackden/dev.md`](docs/blackden/dev.md)
 
-[Docker setup](docs/docker.md)
+```sh
+make doctor          # что установлено локально, что через docker
+make test            # go test -race ./... (~1 минута)
+make build           # static binary в build/olcrtc
+make compose-check   # валидация compose.yaml для всех профилей
+```
 
-[Development (blackden toolbelt)](docs/blackden/dev.md)
+### Деплой на MikroTik CHR / RouterBoard
 
-[Client URI format](docs/uri.md)
+[`docs/blackden/mikrotik-chr.md`](docs/blackden/mikrotik-chr.md) — поднять `cnc` прямо на роутере, раздать SOCKS5 в LAN.
 
-[Client subscription format](docs/sub.md)
+### Получить образ из GHCR
 
+```sh
+docker pull ghcr.io/blackden/olcrtc:latest
+```
+
+Образ приватный (намеренно). Авторизация и теги: [`docs/blackden/ghcr.md`](docs/blackden/ghcr.md).
+
+---
+
+## Документация
+
+### Практическая
+
+- [Manual testing (Docker, srv+cnc)](docs/blackden/manual-test.md) — реальный first-run end-to-end
+- [Development toolbelt](docs/blackden/dev.md) — `make`, тесты, линт, docker-wrapper
+- [Docker setup](docs/docker.md) — детали `compose.yaml`, профили, secrets
+- [MikroTik CHR deployment](docs/blackden/mikrotik-chr.md)
+- [GHCR (образы и теги)](docs/blackden/ghcr.md)
+
+### Справочная
+
+- [Configuration](docs/configuration.md) — все `OLCRTC_*` env-переменные
+- [Settings matrix](docs/settings.md) — совместимость carrier × transport
+- [Manual build (без Docker)](docs/manual.md)
+- [Fast mode (legacy scripts)](docs/fast.md)
+- [Client URI format](docs/uri.md)
+- [Client subscription format](docs/sub.md)
+- [Architecture overview](docs/about.md)
+
+### Принципы и workflow форка
+
+- [Principles](docs/blackden/principles.md) — Docker/Go/Git hygiene, чего НЕ делать
+- [Phase B summary](docs/blackden/phase-b.md) — что было сделано в Docker-hardening epic
+- [GitHub MCP workflow](docs/blackden/github-mcp.md) — Issues → PR процесс
+
+---
 
 <div align="center">
 
 ---
-
 
 Telegram: [zarazaex](https://t.me/zarazaexe)
 <br>
 Email: [zarazaex@tuta.io](mailto:zarazaex@tuta.io)
 <br>
 Site: [zarazaex.xyz](https://zarazaex.xyz)
-
 
 </div>
