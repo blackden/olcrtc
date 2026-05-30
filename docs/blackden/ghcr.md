@@ -29,12 +29,16 @@ Plus SLSA provenance attestation и SBOM (включены в workflow).
 
 ## Одноразовый шаг: сделать package публичным
 
-После **первого** push образ создаётся **приватным** — GitHub так делает по умолчанию для GHCR.
+После **первого** push образ создаётся **приватным** — GitHub так делает по умолчанию для GHCR. **REST API для смены visibility нет** (проверено через docs.github.com/en/rest/packages — endpoint'а попросту не существует). Только через Web UI:
 
-1. Открыть https://github.com/users/blackden/packages/container/olcrtc/settings
-2. Прокрутить до раздела "Danger Zone" → **"Change package visibility"**
-3. Выбрать **"Public"**
-4. Подтвердить вводом `blackden/olcrtc`
+1. Открыть https://github.com/blackden?tab=packages (или https://github.com/blackden/packages)
+2. Кликнуть на пакет `olcrtc`
+3. На странице пакета — иконка шестерёнки **«Package settings»** справа внизу
+4. Прокрутить до **«Danger Zone»** в самом низу
+5. **«Change visibility»** → **«Public»**
+6. Подтвердить вводом имени пакета (`olcrtc`) и нажатием «I understand the consequences, change package visibility»
+
+> ⚠️ **Это нельзя откатить.** Раз сделанный package public нельзя сделать обратно private — будет только удалить и пересоздать заново.
 
 После этого `docker pull ghcr.io/blackden/olcrtc:latest` работает без `docker login`.
 
