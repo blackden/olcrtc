@@ -37,3 +37,8 @@ coverage.out
 
 # AI-tool files
 GEMINI.md
+
+# Developer toolbelt — not needed in runtime image
+Makefile
+script/dev/
+docs/superpowers/
